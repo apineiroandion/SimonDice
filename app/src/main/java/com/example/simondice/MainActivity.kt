@@ -1,9 +1,11 @@
 package com.example.simondice
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock.sleep
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,6 +31,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,26 +58,40 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+var toastText = mutableStateOf("")
+fun setToastText(text: String){
+    toastText.value = text
+}
+fun getToastText(): String{
+    return toastText.value
+}
 var ronda = mutableStateOf(0)
 fun aumentarRonda(){
     ronda.value++
 }
 
 fun comprobacion (){
-    if (secuencia.size == secuenciaMaquina.size){
+    if (secuencia.size <= secuenciaMaquina.size){
         comprobarSecuencia()
     }
 }
+
 fun comprobarSecuencia(){
     if (secuenciaMaquina == secuencia){
         secuencia.clear()
         Log.d("TAG", "CORRECTO")
-
-    }else{
+        setToastText("Ronda " + ronda.value + " superada")
+    }
+    else if (secuenciaMaquina.subList(0, secuencia.size) == secuencia){
+        Log.d("TAG", "CORRECTO")
+        setToastText("Vas por buen camino!!")
+    }
+    else{
         secuencia.clear()
         secuenciaMaquina.clear()
         ronda.value = 0
         Log.d("TAG", "INCORRECTO")
+        setToastText("Ronda perdida :(")
     }
 }
 val secuenciaMaquina = mutableListOf<Int>()
@@ -85,13 +103,19 @@ fun generarSecuenciaMaquina(){
     Log.d("TAG", secuenciaMaquina.toString())
 }
 val secuencia = mutableListOf<Int>()
+
 fun click(id : Int){
     secuencia.add(id)
     Log.d("TAG", Colors.entries.get(id).nombre + " " + Colors.entries.get(id).id)
     Log.d("TAG", secuencia.toString())
     comprobacion()
+    mostrarToast(getToastText(), this)
 }
-
+fun mostrarToast(toastText: String, context: Context){
+    val duration = Toast.LENGTH_SHORT
+    val toast = Toast.makeText(context, toastText, duration)
+    toast.show()
+}
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
