@@ -1,10 +1,13 @@
 package com.example.simondice
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.SystemClock.sleep
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.Center
@@ -20,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simondice.ui.theme.Colors
 import com.example.simondice.ui.theme.SimonDiceTheme
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +54,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+var ronda = mutableStateOf(0)
+fun aumentarRonda(){
+    ronda.value++
+}
+
 fun comprobacion (){
     if (secuencia.size == secuenciaMaquina.size){
         comprobarSecuencia()
@@ -57,11 +72,13 @@ fun comprobarSecuencia(){
     }else{
         secuencia.clear()
         secuenciaMaquina.clear()
+        ronda.value = 0
         Log.d("TAG", "INCORRECTO")
     }
 }
 val secuenciaMaquina = mutableListOf<Int>()
 fun generarSecuenciaMaquina(){
+    aumentarRonda()
     val random = (0..3).random()
     secuenciaMaquina.add(random)
     Log.d("TAG", Colors.entries.get(random).nombre + " " + Colors.entries.get(random).id)
@@ -74,8 +91,42 @@ fun click(id : Int){
     Log.d("TAG", secuencia.toString())
     comprobacion()
 }
+
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
+    val redButtonColor = remember { mutableStateOf(Color.Red) }
+    val blueButtonColor = remember { mutableStateOf(Color.Blue) }
+    val greenButtonColor = remember { mutableStateOf(Color.Green) }
+    val yellowButtonColor = remember { mutableStateOf(Color.Yellow) }
+
+    suspend fun colorearSecuencia (){
+        for (i in secuenciaMaquina){
+            when(i){
+                Colors.RED.id -> {
+                    redButtonColor.value = Colors.RED.colorPressed
+                    delay(1000)
+                    redButtonColor.value = Color.Red
+                }
+                Colors.BLUE.id -> {
+                    blueButtonColor.value = Colors.BLUE.colorPressed
+                    delay(1000)
+                    blueButtonColor.value = Color.Blue
+                }
+                Colors.GREEN.id -> {
+                    greenButtonColor.value = Colors.GREEN.colorPressed
+                    delay(1000)
+                    greenButtonColor.value = Color.Green
+                }
+                Colors.YELLOW.id -> {
+                    yellowButtonColor.value = Colors.YELLOW.colorPressed
+                    delay(1000)
+                    yellowButtonColor.value = Color.Yellow
+                }
+            }
+        }
+    }
+
     Column (
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxSize()
@@ -92,8 +143,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         .padding(10.dp)
                         .size(150.dp, 100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del n botón
-                        contentColor = Color.White,   // Color del texto del botón
+                        containerColor = redButtonColor.value,
+                        contentColor = Color.White,
                     )
                 ) {
                     Text(text = Colors.RED.nombre)
@@ -103,8 +154,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         .padding(10.dp)
                         .size(150.dp, 100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Blue, // Color de fondo del n botón
-                        contentColor = Color.White,   // Color del texto del botón
+                        containerColor = blueButtonColor.value,
+                        contentColor = Color.White,
                     )
                 ) {
                     Text(text = Colors.BLUE.nombre)
@@ -116,8 +167,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         .padding(10.dp)
                         .size(150.dp, 100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Green, // Color de fondo del n botón
-                        contentColor = Color.White,   // Color del texto del botón
+                        containerColor = greenButtonColor.value,
+                        contentColor = Color.White,
                     )
                 ) {
                     Text(text = Colors.GREEN.nombre)
@@ -127,27 +178,36 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         .padding(10.dp)
                         .size(150.dp, 100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Yellow, // Color de fondo del n botón
-                        contentColor = Color.White,   // Color del texto del botón
+                        containerColor = yellowButtonColor.value,
+                        contentColor = Color.White,
                     )
                 ) {
                     Text(text = Colors.YELLOW.nombre)
                 }
             }
         }
-        TextButton(onClick = { generarSecuenciaMaquina() },
+        val coroutineScope = rememberCoroutineScope()
+        TextButton(onClick = {
+            coroutineScope.launch {
+                generarSecuenciaMaquina()
+                colorearSecuencia()
+            }
+                             },
             modifier = Modifier
                 .padding(10.dp)
                 .size(300.dp, 100.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Gray, // Color de fondo del n botón
-                contentColor = Color.White,   // Color del texto del botón
+                containerColor = Color.Gray,
+                contentColor = Color.White,
             )
         ) {
-            Text(text = "START ronda: " + secuenciaMaquina.size)
+            Text(text = "START ronda: " + ronda.value)
         }
     }
+
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
